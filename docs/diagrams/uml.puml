@@ -1,0 +1,143 @@
+@startuml
+' Estilo básico para que se vea bien
+skinparam classAttributeIconSize 0
+
+package "edu.campus.dining.macroforge" {
+
+    class MacroforgeNexusApplication {
+        + {static} main(args: String[]): void
+    }
+
+    class Food {
+        - stateProfiles : Map<StatePhase, NutritionalProfile>
+        # name : String
+        # price : double
+        # unitOfMeasurement : UnitOfMeasurement
+        # cookingState : CookingState
+        # permittedCookingMethods : Set<String>
+        + Food (name : String, price : double, unitOfMeasurement : UnitOfMeasurement, permittedCookingMethods : Set<String>, stateProfiles : Map<StatePhase, NutritionalProfile>)
+        + cook (cookingMethod : String) : void
+        + getName () : String
+        + getPrice () : double
+        + getUnitOfMeasurement () : UnitOfMeasurement
+        + getCleanEnergy () : LevelOfImpact
+        + getVolumeOfMuscleMass () : LevelOfImpact
+        + setCookingState (newCookingState : CookingState) : void
+    }
+
+    Food ..> UnitOfMeasurement : "has a"
+    Food ..> CookingState : "has a"
+    Food ..> NutritionalProfile : "uses"
+    Food ..> StatePhase : "uses"
+
+    class NutritionalProfile <<record>> {
+        + cleanEnergy : LevelOfImpact
+        + volumeOfMuscleMass : LevelOfImpact
+        + priceModifier : double
+    } 
+
+    NutritionalProfile ..> LevelOfImpact : "has two"
+
+    enum StatePhase {
+        RAW 
+        COOKED 
+        BURNED
+    }
+
+    enum LevelOfImpact {
+        GOD 
+        EXCELLENT 
+        VERY_GOOD
+        GOOD 
+        REGULAR 
+        BAD 
+        VERY_BAD 
+    }
+
+    enum UnitOfMeasurement {
+        KILOGRAM 
+        LITER
+        UNIT
+    }
+
+    abstract CookingState {
+        # food : Food 
+        + CookingState (food : Food)
+        {abstract} + cook (cookingMethod : String) : void
+        + getFood () : Food
+        {abstract} + getPhase () : StatePhase 
+    }
+
+    CookingState ..> Food : "has a"
+    CookingState ..> StatePhase : "has a"
+
+    class RawState extends CookingState {
+        + RawState (food : Food)
+        + cook (cookingMethod : String) : void
+        + getPhase () : StatePhase 
+    }
+
+    class CookedState extends CookingState {
+        + CookedState (food : Food)
+        + cook (cookingMethod : String) : void
+        + getPhase () : StatePhase 
+    }
+
+    class BurnedState extends CookingState {
+        + BurnedState (food : Food)
+        + cook (cookingMethod : String) : void
+        + getPhase () : StatePhase 
+    }
+
+    class PlateOfFood {
+        - name : String 
+        - ingredients : List<Food>
+        + PlateOfFood (name : String, ingredients : List<Food>)
+        + getName () : String
+        + getIngredients () : List<Food>
+    }
+
+    PlateOfFood *-- Food : "has many"
+
+    interface PlateOfFoodBuilder {
+        + addIngredient (ingredient : Food) : PlateOfFoodBuilder
+        + withName (plateOfFoodName : String) : PlateOfFoodBuilder
+        + build () : PlateOfFood
+        + reset () : void
+    }
+
+    class BasicPlateOfFoodBuilder implements PlateOfFoodBuilder {  
+        - plateOfFoodName : String
+        - ingredients : List<Food>
+        + BasicPlateOfFoodBuilder ()
+        + addIngredient (ingredient : Food) : PlateOfFoodBuilder
+        + withName (plateOfFoodName : String) : PlateOfFoodBuilder
+        + build () : PlateOfFood
+        + reset () : void 
+    }
+
+    BasicPlateOfFoodBuilder ..> Food : "has many"
+    BasicPlateOfFoodBuilder ..> PlateOfFood : "build a"
+
+    class IngredientCatalog {
+        - {static} final OAT_PROFILES : Map<StatePhase, NutritionalProfile>
+        - {static} final EGG_PROFILES : Map<StatePhase, NutritionalProfile>
+        - {static} final PEANUT_PROFILES : Map<StatePhase, NutritionalProfile>
+        - {static} final RICE_PROFILES : Map<StatePhase, NutritionalProfile>
+        - {static} final LENTIL_PROFILES : Map<StatePhase, NutritionalProfile>
+        - {static} final BANANA_PROFILES : Map<StatePhase, NutritionalProfile>
+        - {static} final SWEET_POTATO_SWEET_PROFILES : Map<StatePhase, NutritionalProfile>
+        - {static} final LETTUCE_PROFILES : Map<StatePhase, NutritionalProfile>
+        - {static} final RICE_CRACKER_PROFILES : Map<StatePhase, NutritionalProfile>
+        - {static} final CHEESE_PROFILES : Map<StatePhase, NutritionalProfile>
+        - {static} final MEAT_PROFILES : Map<StatePhase, NutritionalProfile>
+        - {static} final FISH_PROFILES : Map<StatePhase, NutritionalProfile>
+
+        + create (ingredientName : String) : Food
+    }
+
+    IngredientCatalog ..> Food : "creates a"
+    IngredientCatalog ..> NutritionalProfile : "configures"
+    IngredientCatalog ..> StatePhase : "uses"
+}
+@enduml
