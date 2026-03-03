@@ -1,5 +1,5 @@
 @startuml
-' Estilo básico para que se vea bien
+
 skinparam classAttributeIconSize 0
 
 package "edu.campus.dining.macroforge" {
@@ -8,21 +8,189 @@ package "edu.campus.dining.macroforge" {
         + {static} main(args: String[]): void
     }
 
-    class Food {
-        - stateProfiles : Map<StatePhase, NutritionalProfile>
-        # name : String
-        # price : double
-        # unitOfMeasurement : UnitOfMeasurement
-        # cookingState : CookingState
-        # permittedCookingMethods : Set<String>
-        + Food (name : String, price : double, unitOfMeasurement : UnitOfMeasurement, permittedCookingMethods : Set<String>, stateProfiles : Map<StatePhase, NutritionalProfile>)
-        + cook (cookingMethod : String) : void
-        + getName () : String
-        + getPrice () : double
-        + getUnitOfMeasurement () : UnitOfMeasurement
-        + getCleanEnergy () : LevelOfImpact
-        + getVolumeOfMuscleMass () : LevelOfImpact
-        + setCookingState (newCookingState : CookingState) : void
+    package "model" {
+        class Food {
+            - stateProfiles : Map<StatePhase, NutritionalProfile>
+            - name : String
+            - price : double
+            - unitOfMeasurement : UnitOfMeasurement
+            - cookingState : CookingState
+            - permittedCookingMethods : Set<String>
+            + Food (name : String, price : double, unitOfMeasurement : UnitOfMeasurement, permittedCookingMethods : Set<String>, stateProfiles : Map<StatePhase, NutritionalProfile>)
+            + cook (cookingMethod : String) : void
+            + getName () : String
+            + getPrice () : double
+            + getUnitOfMeasurement () : UnitOfMeasurement
+            + getCleanEnergy () : LevelOfImpact
+            + getVolumeOfMuscleMass () : LevelOfImpact
+            + setCookingState (newCookingState : CookingState) : void
+        }
+
+        class PlateOfFood {
+            - name : String 
+            - ingredients : List<Food>
+            - basePrice : double
+            + PlateOfFood (name : String, ingredients : List<Food>)
+            + getName () : String
+            + getIngredients () : List<Food>
+            + getBasePrice () : double
+        }
+
+        class NutritionalProfile <<record>> {
+            + cleanEnergy : LevelOfImpact
+            + volumeOfMuscleMass : LevelOfImpact
+            + priceModifier : double
+        } 
+
+        class Student {
+            - id : Long
+            - name : String
+            - lastName : String
+            - pricingStrategy : PricingStrategy
+            - macroValidationStrategy : MacroValidationStrategy
+            - balance : double
+            + Student ()
+            + Student (id : Long, name : String, lastName : String, balance : double, pricingStrategy : PricingStrategy, macroValidationStrategy : MacroValidationStrategy)
+            + calculateFinalPrice (plate : PlateOfFood) : double
+            + hasValidMacros (plate : PlateOfFood) : boolean
+            + getId () : Long
+            + getName () : String
+            + getLastName () : String
+            + getBalance () : double
+            + setId (newId : Long) : void
+            + setName (newName : String) : void
+            + setLastName (newLastName : String) : void
+            + setBalance (newBalance : double) : void
+            + setPricingStrategy (newPricingStrategy : PricingStrategy) : void
+            + setMacroValidationStrategy (newMacroValidationStrategy : MacroValidationStrategy) : void 
+        }
+
+        package "enums" {   
+            enum StatePhase {
+                RAW 
+                COOKED 
+                BURNED
+            }
+
+            enum LevelOfImpact {
+                GOD 
+                EXCELLENT 
+                VERY_GOOD
+                GOOD 
+                REGULAR 
+                BAD 
+                VERY_BAD 
+            }
+
+            enum UnitOfMeasurement {
+                KILOGRAM 
+                LITER
+                UNIT
+            }
+        }
+
+        package "strategy" {
+            package "pricing" {
+                interface PricingStrategy {
+                    + calculateFinalPrice (plate : PlateOfFood) : double
+                }
+
+                class RegularStudentPricingStrategy implements PricingStrategy {
+                    + calculateFinalPrice (plate : PlateOfFood) : double
+                }
+
+                class AthletePricingStrategy implements PricingStrategy {
+                    + calculateFinalPrice (plate : PlateOfFood) : double
+                }
+
+                class ProgrammerPricingStrategy implements PricingStrategy {
+                    + calculateFinalPrice (plate : PlateOfFood) : double
+                }
+            }
+
+            package "macro" {
+                interface MacroValidationStrategy {
+                    + hasValidMacros (plate : PlateOfFood) : boolean
+                }
+
+                class RegularStudentMacroValidationStrategy implements MacroValidationStrategy {
+                    + hasValidMacros (plate : PlateOfFood) : boolean
+                }
+
+                class AthleteMacroValidationStrategy implements MacroValidationStrategy {
+                    + hasValidMacros (plate : PlateOfFood) : boolean
+                }
+
+                class ProgrammerMacroValidationStrategy implements MacroValidationStrategy {
+                    + hasValidMacros (plate : PlateOfFood) : boolean
+                }
+            }
+        }
+
+        package "state" {
+            abstract CookingState {
+                # food : Food 
+                + CookingState (food : Food)
+                {abstract} + cook (cookingMethod : String) : void
+                + getFood () : Food
+                {abstract} + getPhase () : StatePhase 
+            }
+
+            class RawState extends CookingState {
+                + RawState (food : Food)
+                + cook (cookingMethod : String) : void
+                + getPhase () : StatePhase 
+            }
+
+            class CookedState extends CookingState {
+                + CookedState (food : Food)
+                + cook (cookingMethod : String) : void
+                + getPhase () : StatePhase 
+            }
+
+            class BurnedState extends CookingState {
+                + BurnedState (food : Food)
+                + cook (cookingMethod : String) : void
+                + getPhase () : StatePhase 
+            }
+        }
+
+        package "builder" {
+            interface PlateOfFoodBuilder {
+                + addIngredient (ingredient : Food) : PlateOfFoodBuilder
+                + withName (plateOfFoodName : String) : PlateOfFoodBuilder
+                + build () : PlateOfFood
+                + reset () : void
+            }
+
+            class BasicPlateOfFoodBuilder implements PlateOfFoodBuilder {  
+                - plateOfFoodName : String
+                - ingredients : List<Food>
+                + BasicPlateOfFoodBuilder ()
+                + addIngredient (ingredient : Food) : PlateOfFoodBuilder
+                + withName (plateOfFoodName : String) : PlateOfFoodBuilder
+                + build () : PlateOfFood
+                + reset () : void 
+            }
+        }
+    }
+
+    package "service" {
+        class IngredientCatalog {
+            - {static} final OAT_PROFILES : Map<StatePhase, NutritionalProfile>
+            - {static} final EGG_PROFILES : Map<StatePhase, NutritionalProfile>
+            - {static} final PEANUT_PROFILES : Map<StatePhase, NutritionalProfile>
+            - {static} final RICE_PROFILES : Map<StatePhase, NutritionalProfile>
+            - {static} final LENTIL_PROFILES : Map<StatePhase, NutritionalProfile>
+            - {static} final BANANA_PROFILES : Map<StatePhase, NutritionalProfile>
+            - {static} final SWEET_POTATO_SWEET_PROFILES : Map<StatePhase, NutritionalProfile>
+            - {static} final LETTUCE_PROFILES : Map<StatePhase, NutritionalProfile>
+            - {static} final RICE_CRACKER_PROFILES : Map<StatePhase, NutritionalProfile>
+            - {static} final CHEESE_PROFILES : Map<StatePhase, NutritionalProfile>
+            - {static} final MEAT_PROFILES : Map<StatePhase, NutritionalProfile>
+            - {static} final FISH_PROFILES : Map<StatePhase, NutritionalProfile>
+            + create (ingredientName : String) : Food
+        }
     }
 
     Food ..> UnitOfMeasurement : "has a"
@@ -30,114 +198,25 @@ package "edu.campus.dining.macroforge" {
     Food ..> NutritionalProfile : "uses"
     Food ..> StatePhase : "uses"
 
-    class NutritionalProfile <<record>> {
-        + cleanEnergy : LevelOfImpact
-        + volumeOfMuscleMass : LevelOfImpact
-        + priceModifier : double
-    } 
-
     NutritionalProfile ..> LevelOfImpact : "has two"
-
-    enum StatePhase {
-        RAW 
-        COOKED 
-        BURNED
-    }
-
-    enum LevelOfImpact {
-        GOD 
-        EXCELLENT 
-        VERY_GOOD
-        GOOD 
-        REGULAR 
-        BAD 
-        VERY_BAD 
-    }
-
-    enum UnitOfMeasurement {
-        KILOGRAM 
-        LITER
-        UNIT
-    }
-
-    abstract CookingState {
-        # food : Food 
-        + CookingState (food : Food)
-        {abstract} + cook (cookingMethod : String) : void
-        + getFood () : Food
-        {abstract} + getPhase () : StatePhase 
-    }
-
+    
     CookingState ..> Food : "has a"
     CookingState ..> StatePhase : "has a"
 
-    class RawState extends CookingState {
-        + RawState (food : Food)
-        + cook (cookingMethod : String) : void
-        + getPhase () : StatePhase 
-    }
-
-    class CookedState extends CookingState {
-        + CookedState (food : Food)
-        + cook (cookingMethod : String) : void
-        + getPhase () : StatePhase 
-    }
-
-    class BurnedState extends CookingState {
-        + BurnedState (food : Food)
-        + cook (cookingMethod : String) : void
-        + getPhase () : StatePhase 
-    }
-
-    class PlateOfFood {
-        - name : String 
-        - ingredients : List<Food>
-        + PlateOfFood (name : String, ingredients : List<Food>)
-        + getName () : String
-        + getIngredients () : List<Food>
-    }
-
     PlateOfFood *-- Food : "has many"
-
-    interface PlateOfFoodBuilder {
-        + addIngredient (ingredient : Food) : PlateOfFoodBuilder
-        + withName (plateOfFoodName : String) : PlateOfFoodBuilder
-        + build () : PlateOfFood
-        + reset () : void
-    }
-
-    class BasicPlateOfFoodBuilder implements PlateOfFoodBuilder {  
-        - plateOfFoodName : String
-        - ingredients : List<Food>
-        + BasicPlateOfFoodBuilder ()
-        + addIngredient (ingredient : Food) : PlateOfFoodBuilder
-        + withName (plateOfFoodName : String) : PlateOfFoodBuilder
-        + build () : PlateOfFood
-        + reset () : void 
-    }
 
     BasicPlateOfFoodBuilder ..> Food : "has many"
     BasicPlateOfFoodBuilder ..> PlateOfFood : "build a"
 
-    class IngredientCatalog {
-        - {static} final OAT_PROFILES : Map<StatePhase, NutritionalProfile>
-        - {static} final EGG_PROFILES : Map<StatePhase, NutritionalProfile>
-        - {static} final PEANUT_PROFILES : Map<StatePhase, NutritionalProfile>
-        - {static} final RICE_PROFILES : Map<StatePhase, NutritionalProfile>
-        - {static} final LENTIL_PROFILES : Map<StatePhase, NutritionalProfile>
-        - {static} final BANANA_PROFILES : Map<StatePhase, NutritionalProfile>
-        - {static} final SWEET_POTATO_SWEET_PROFILES : Map<StatePhase, NutritionalProfile>
-        - {static} final LETTUCE_PROFILES : Map<StatePhase, NutritionalProfile>
-        - {static} final RICE_CRACKER_PROFILES : Map<StatePhase, NutritionalProfile>
-        - {static} final CHEESE_PROFILES : Map<StatePhase, NutritionalProfile>
-        - {static} final MEAT_PROFILES : Map<StatePhase, NutritionalProfile>
-        - {static} final FISH_PROFILES : Map<StatePhase, NutritionalProfile>
-
-        + create (ingredientName : String) : Food
-    }
-
     IngredientCatalog ..> Food : "creates a"
     IngredientCatalog ..> NutritionalProfile : "configures"
     IngredientCatalog ..> StatePhase : "uses"
+
+    Student o-- PricingStrategy : "has a"
+    Student o-- MacroValidationStrategy : "has a"
+    Student ..> PlateOfFood : "uses"
+
+    PricingStrategy ..> PlateOfFood : "uses a"
+    MacroValidationStrategy ..> PlateOfFood : "uses a"
 }
 @enduml
