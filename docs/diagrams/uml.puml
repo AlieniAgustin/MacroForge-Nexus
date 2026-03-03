@@ -26,14 +26,24 @@ package "edu.campus.dining.macroforge" {
             + setCookingState (newCookingState : CookingState) : void
         }
 
+        class PlateItem {
+            - food : Food
+            - requestedCookingMethod : String 
+            + PlateItem (food : Food, requestedCookingMethod : String)
+            + getFood () : Food
+            + getRequestedCookingMethod () : String
+            + cook () : void 
+        }
+
         class PlateOfFood {
             - name : String 
-            - ingredients : List<Food>
+            - items : List<PlateItem>
             - basePrice : double
-            + PlateOfFood (name : String, ingredients : List<Food>)
+            + PlateOfFood (name : String, items : List<PlateItem>)
             + getName () : String
-            + getIngredients () : List<Food>
+            + getItems () : List<PlateItem>
             + getBasePrice () : double
+            + preparePlate () : void 
         }
 
         class NutritionalProfile <<record>> {
@@ -63,6 +73,25 @@ package "edu.campus.dining.macroforge" {
             + setBalance (newBalance : double) : void
             + setPricingStrategy (newPricingStrategy : PricingStrategy) : void
             + setMacroValidationStrategy (newMacroValidationStrategy : MacroValidationStrategy) : void 
+        }
+
+        class Order {
+            - id : Long
+            - plateOfFood : PlateOfFood
+            - orderState : OrderState
+            - student : Student
+            + Order ()
+            + Order (id : Long, plateOfFood : PlateOfFood, student : Student)
+            + getId () : Long
+            + getPlateOfFood () : PlateOfFood
+            + getOrderState () : OrderState
+            + getStudent () : Student
+            + setId (newId : Long) : void
+            + setPlateOfFood (newPlateOfFood : PlateOfFood) : void
+            + setOrderState (newOrderState : OrderState) : void
+            + advance () : void
+            + prepareOrder () : void
+            + cancel () : void 
         }
 
         package "enums" {   
@@ -128,36 +157,84 @@ package "edu.campus.dining.macroforge" {
         }
 
         package "state" {
-            abstract CookingState {
-                # food : Food 
-                + CookingState (food : Food)
-                {abstract} + cook (cookingMethod : String) : void
-                + getFood () : Food
-                {abstract} + getPhase () : StatePhase 
+            package "cooking" {
+                abstract CookingState {
+                    # food : Food 
+                    + CookingState (food : Food)
+                    {abstract} + cook (cookingMethod : String) : void
+                    + getFood () : Food
+                    {abstract} + getPhase () : StatePhase 
+                }
+
+                class RawState extends CookingState {
+                    + RawState (food : Food)
+                    + cook (cookingMethod : String) : void
+                    + getPhase () : StatePhase 
+                }
+
+                class CookedState extends CookingState {
+                    + CookedState (food : Food)
+                    + cook (cookingMethod : String) : void
+                    + getPhase () : StatePhase 
+                }
+
+                class BurnedState extends CookingState {
+                    + BurnedState (food : Food)
+                    + cook (cookingMethod : String) : void
+                    + getPhase () : StatePhase 
+                }
             }
 
-            class RawState extends CookingState {
-                + RawState (food : Food)
-                + cook (cookingMethod : String) : void
-                + getPhase () : StatePhase 
+            package "order" {
+                abstract OrderState {
+                    # order : Order
+                    + OrderState (order : Order) 
+                    {abstract} + advance () : void
+                    {abstract} + cancel () : void
+                }
+
+                class PendingValidationState extends OrderState {
+                    + PendingValidationState (order : Order)
+                    + advance () : void
+                    + cancel () : void
+                }
+
+                class MacroValidationState extends OrderState {
+                    + MacroValidationState (order : Order) 
+                    + advance () : void
+                    + cancel () : void
+                }
+
+                class CookingOrderState extends OrderState {
+                    + CookingOrderState (order : Order)
+                    + advance () : void
+                    + cancel () : void
+                }
+
+                class OrderReadyForPickupState extends OrderState {
+                    + OrderReadyForPickupState (order : Order)
+                    + advance () : void
+                    + cancel () : void
+                }
+
+                class CompletedState extends OrderState {
+                    + CompletedState (order : Order)
+                    + advance () : void
+                    + cancel () : void
+                }
+
+                class OrderCancelledState extends OrderState {
+                    + OrderCancelledState (order : Order)
+                    + advance () : void
+                    + cancel () : void
+                }
             }
 
-            class CookedState extends CookingState {
-                + CookedState (food : Food)
-                + cook (cookingMethod : String) : void
-                + getPhase () : StatePhase 
-            }
-
-            class BurnedState extends CookingState {
-                + BurnedState (food : Food)
-                + cook (cookingMethod : String) : void
-                + getPhase () : StatePhase 
-            }
         }
 
         package "builder" {
             interface PlateOfFoodBuilder {
-                + addIngredient (ingredient : Food) : PlateOfFoodBuilder
+                + addIngredient (ingredient : Food, cookingMethod : String) : PlateOfFoodBuilder
                 + withName (plateOfFoodName : String) : PlateOfFoodBuilder
                 + build () : PlateOfFood
                 + reset () : void
@@ -165,9 +242,9 @@ package "edu.campus.dining.macroforge" {
 
             class BasicPlateOfFoodBuilder implements PlateOfFoodBuilder {  
                 - plateOfFoodName : String
-                - ingredients : List<Food>
+                - items : List<PlateItem>
                 + BasicPlateOfFoodBuilder ()
-                + addIngredient (ingredient : Food) : PlateOfFoodBuilder
+                + addIngredient (ingredient : Food, cookingMethod : String) : PlateOfFoodBuilder
                 + withName (plateOfFoodName : String) : PlateOfFoodBuilder
                 + build () : PlateOfFood
                 + reset () : void 
@@ -203,9 +280,11 @@ package "edu.campus.dining.macroforge" {
     CookingState ..> Food : "has a"
     CookingState ..> StatePhase : "has a"
 
-    PlateOfFood *-- Food : "has many"
+    PlateOfFood *-- PlateItem : "has many"
 
-    BasicPlateOfFoodBuilder ..> Food : "has many"
+    PlateItem --> Food : "wraps"
+
+    BasicPlateOfFoodBuilder ..> PlateItem : "has many"
     BasicPlateOfFoodBuilder ..> PlateOfFood : "build a"
 
     IngredientCatalog ..> Food : "creates a"
@@ -218,5 +297,11 @@ package "edu.campus.dining.macroforge" {
 
     PricingStrategy ..> PlateOfFood : "uses a"
     MacroValidationStrategy ..> PlateOfFood : "uses a"
+
+    Order o-- Student : "has a"
+    Order ..> OrderState : "has a"
+    Order ..> PlateOfFood : "has a"
+
+    OrderState ..> Order : "has a"
 }
 @enduml
